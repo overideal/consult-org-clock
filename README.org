@@ -1,0 +1,56 @@
+* Description
+*Consult-org-clock* is an Emacs package providing a [[https://github.com/minad/consult][consult-based]] interface to org clock.
+This allows the user to quickly clock into previous tasks. The main command
+of this package is =consult-org-clock= which can be seen as a "do what I mean"
+replacement of the built-in =org-clock-in= command (when the latter is called with
+a prefix argument).
+Apart from using the /consult/ interface (and thus providing live previews),
+this package offers the following additional features:
+- Clock out when selecting a heading that is currently clocked in,
+  which removes the need for the =org-clock-out= command.
+- Optionally add the Org heading at point to the list of candidates as the first (or second) element
+  (see =consult-org-clock-add-heading-clocked-out= and =consult-org-clock-add-heading-clocked-in=).
+- Optionally display the candidates with their file as a prefix (see =consult-org-clock-show-name=).
+- A new command =consult-org-clock-goto=, replacing =org-clock-goto= with a /consult-based/ version.
+
+By using this =completing-read= interface, /org mode/ is also streamlined, using
+the default completion mechanism of Emacs instead of its custom one.
+
+* Dependencies and Installation
+This package requires at least version 27.1 (probably older versions work fine too) of GNU Emacs
+and depends on the following packages:
+- org-mode (built-in)
+- cl-lib (built-in)
+- seq (built-in)
+- [[https://github.com/minad/consult][consult]]
+
+It is recommended to also install and configure [[https://github.com/minad/vertico][vertico]].
+
+* Default Configuration
+
+* Customization
+Many customization options are provided, run =M-x customize-group consult-org-clock= to see them.
+For example, with the following customization
+(put it inside the /:config/ block of =use-package= or modified into the /:custom/ block)
+#+BEGIN_SRC emacs-lisp
+(setq consult-org-clock-add-heading-predicate #'org-at-heading-p)
+#+END_SRC
+the org heading will only be added if the cursor (point) is exactly on an Org heading.
+In contrast, if this variable is /nil/, a heading will also be added if the cursor is in
+the body of the heading (the text below it).
+
+* Comparison to other Packages
+Here we compare this package with related ones:
+- The [[https://github.com/unhammer/org-mru-clock][org-mru-clock]] package served as inspiration for this package, given that it provides a /completing-read/
+  based interface to =org-clock-in=. One drawback of this is that no preview is provided.
+- The [[https://github.com/minad/consult/wiki#org-clock][consult Wiki]] provides a small function implementing a consult-based interface to =org-clock-in=.
+  Of course, this package (being an actual package) offers more features and customization options.
+
+This package is different from the above in the following points:
+- /consult-org-clock/ only offers the previously clocked-in entries as candidates to choose from.
+  The idea is to either clock into an already recently clocked-in task or use other
+  commands to navigate to a new heading and then clock in with the cursor on the heading.
+- /consult-org-clock/ will clock out if the user selects a heading that is currently clocked into.
+- /consult-org-clock/ adds the current org heading to the top or second entry of the list,
+  depending on whether a task is currently clocked in and on the user's configuration.
+
