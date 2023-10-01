@@ -52,39 +52,45 @@
 ;;;; Customization
 
 (defgroup consult-org-clock nil
-  "A consult-based interface to org-clock"
+  "A consult-based interface to org-clock."
   :group 'convenience
   :group 'minibuffer
   :prefix "consult-org-clock-")
 
 (defcustom consult-org-clock-add-heading-clocked-out t
-  "When non-nil and the user is clocked out, `consult-org-clock' will display the org heading at point.
-If this variable is set to `second', the current org heading is added as the
-second entry to the list of candidates.
-If there is no org heading at point, this option has no effect."
+  "Whether `consult-org-clock' shows the org heading at point when clocked out.
+If this variable is-non-nil, add the current org heading to the front of the
+list of candidates. As a special case, if this variable is \\='second, the
+current org heading is added as the second entry.
+If there is no org heading at point or the user is clocked in, this option has
+no effect."
   :type '(choice
 		  (const :tag "Don't add current org heading" nil)
 		  (const :tag "Add current org heading to front" t)
 		  (const :tag "Add current org heading as second entry" second)))
 
 (defcustom consult-org-clock-add-heading-clocked-in 'second
-  "When non-nil and the user is clocked in, `consult-org-clock' will display the org heading at point.
-If this variable is set to `second', the current org heading is added as the
-second entry to the list of candidates.
-If there is no org heading at point, this option has no effect."
+  "Whether `consult-org-clock' shows the org heading at point when clocked in.
+If this variable is-non-nil, add the current org heading to the front of the
+list of candidates. As a special case, if this variable is \\='second, the
+current org heading is added as the second entry.
+If there is no org heading at point or the user is clocked out, this option has
+no effect."
   :type '(choice
 		  (const :tag "Don't add current org heading" nil)
 		  (const :tag "Add current org heading to front" t)
 		  (const :tag "Add current org heading as second entry" second)))
 
 (defcustom consult-org-clock-add-heading-predicate nil
-  "A predicate function deciding whether `consult-org-clock' displays the org heading at point.
-It may also be nil, in which case the current org heading is always included.
+  "Predicate function deciding whether the org heading at point is shown.
+This affects the commands `consult-org-clock' and `consult-org-clock-goto'.
 The function is called without any argument and should infer from the position
 of point whether to include the corresponding org heading or not. If it returns
 non-nil, the heading is included; otherwise it is not.
-This variable only takes effect if there is an org heading and the variables
-`consult-org-clock-add-heading-clocked-out' and
+This variable may also be nil, in which case the current org heading is
+included.
+Note that the variable only takes effect if there is an org heading and the
+variables `consult-org-clock-add-heading-clocked-out' and
 `consult-org-clock-add-heading-clocked-in' are set appropriately."
   :type '(choice function (const nil)))
 
@@ -148,8 +154,8 @@ heading and should return a string to represent this candidate."
   "Display the org clock history in order to clock in or out.
 When currently clocked into a task, selecting that task will stop the clock and
 selecting another task will stop the clock and start a clock for the new task.
-The history can be filtered by customizing `consult-org-clock-predicate' and
-`consult-org-clock-predicate-secondary'.
+ARG (the prefix argument) controls whether the candidates are filtered by
+`consult-org-clock-predicate' or `consult-org-clock-predicate-secondary'.
 The behavior of this command can be further altered by
 customizing `consult-org-clock-add-heading-clocked-out' and
 `consult-org-clock-add-heading-clocked-in'."
@@ -201,7 +207,8 @@ PREDICATE may either be nil or be a predicate function used to filter HISTORY.
 Depending on the values of `consult-org-clock-add-heading-clocked-out' and
 `consult-org-clock-add-heading-clocked-in', add the current org entry (if there
 is one) to the top of the list of candidates. That entry is never filtered by
-PREDICATE."
+PREDICATE.
+If PREFIX is non-nil, prefix the candidates with the buffer name."
   (let ((list (consult-org-clock--format-history history predicate prefix))
         (entry-at-point (consult-org-clock--get-heading prefix)))
 	;; `org-clock-history' may contain different markers whose corresponding
@@ -227,7 +234,8 @@ defaults to that variable.
 PREDICATE may either be nil or be a predicate function used to filter HISTORY.
 It is called with the history element as its only argument and with point at the
 heading in question.
-A list of pairs of headline strings and markers is returned."
+A list of pairs of headline strings and markers is returned.
+If PREFIX is non-nil, prefix the candidates with the buffer name."
   (let (result)
 	(cl-dolist (entry (or history org-clock-history))
 	  ;; Ensure that the buffer still exists.
