@@ -60,12 +60,14 @@ The configuration may look as follows (using /use-packge/ which is built-in sinc
 	  (or (not file) (org-agenda-file-p file))))
   (setq consult-org-clock-predicate-secondary #'consult-org-clock-agenda-predicate)
   :bind
-  ;; Here we are replacing the default bindings, but feel free to choose different ones.
   ("C-c C-x TAB" . consult-org-clock)
   ("C-c C-x C-j" . consult-org-clock-goto))
 #+END_SRC
-This configuration replaces the default bindings of =org-clock-in= and =org-clock-goto=
-(which however are only active in /Org mode/).
+The main commands provided by this package are =consult-org-clock= and
+=consult-org-clock-goto=.
+This configuration binds those commands to the default bindings of =org-clock-in= and =org-clock-goto=
+(which however by default are only active in /Org mode/), essentially replacing
+those built-in functions.
 Feel free to choose different bindings or change some of the variables.
 
 * Customization
