@@ -27,6 +27,25 @@ and depends on the following packages:
 It is recommended to also install and configure [[https://github.com/minad/vertico][vertico]].
 
 * Default Configuration
+Install the package via [[https://github.com/radian-software/straight.el][straight]].
+The configuration may look as follows (using /use-packge/ which is built-in since Emacs 29):
+#+BEGIN_SRC emacs-lisp
+(use-package consult-org-clock
+  :straight (:type git :host github :repo "overideal/consult-org-clock")
+  :config
+  (defun consult-org-clock-agenda-predicate (entry)
+	"Return non-nil if ENTRY belongs to no file or to an org agenda file."
+	(let ((file (buffer-file-name (marker-buffer entry))))
+	  (or (not file) (org-agenda-file-p file))))
+  (setq consult-org-clock-predicate-secondary #'consult-org-clock-agenda-predicate)
+  :bind
+  ;; Here we are replacing the default bindings, but feel free to choose different ones.
+  ("C-c C-x TAB" . consult-org-clock)
+  ("C-c C-x C-j" . consult-org-clock-goto))
+#+END_SRC
+This configuration replaces the default bindings of =org-clock-in= and =org-clock-goto=
+(which however are only active in /Org mode/).
+Feel free to choose different bindings or change some of the variables.
 
 * Customization
 Many customization options are provided, run =M-x customize-group consult-org-clock= to see them.
