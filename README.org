@@ -16,6 +16,27 @@ this package offers the following additional features:
 By using this =completing-read= interface, /org mode/ is also streamlined, using
 the default completion mechanism of Emacs instead of its custom one.
 
+* Demonstration
+
+https://github.com/overideal/consult-org-clock/assets/89090800/c396fb99-68a1-4d13-b795-0cf6246d007e
+
+This demo uses the default configuration with /consult/ and /vertico/.
+
+In it, I start in a source code file and invoke =consult-org-clock= to clock into the respective task
+(which I have worked on before). I then clock out again, using the same command and switch to an
+org file.
+Then I move the cursor onto the Org heading "Write README", which then appears at the top of =consult-org-clock=,
+allowing me to clock into that task. After switching to the README file, I decide to work on another project.
+Using =consult-org-clock=, I navigate the history and select the project I want to continue working on.
+This stops the clock for the running task ("Write README") and starts it for the project in question.
+Finally, I switch to the corresponding project file and am ready to continue my work.
+
+This demo hopefully highlights a possible usage of this package.
+Use =consult-org-clock= to clock into any tasks have been worked on recently.
+When starting to work on a completely new task, use other commands (e.g. =consult-org-agenda=)
+to navigate to the respective heading, from where =consult-org-clock= with the default candidate
+can be invoked to clock in.
+
 * Dependencies and Installation
 This package requires at least version 27.1 (probably older versions work fine too) of GNU Emacs
 and depends on the following packages:
