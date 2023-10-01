@@ -27,16 +27,22 @@
 ;; This allows the user to quickly clock into previous tasks. The main command
 ;; of this package is `consult-org-clock' which can be seen as a "do what I
 ;; mean" replacement of the built-in `org-clock-in' command (when called with a
-;; prefix argument). The main difference between the two commands is that
-;; `consult-org-clock' makes use of the minibuffer to get the user's input. By
-;; leveraging `consult' and the `completing-read' interface, the selection
-;; process should be more convenient and informative (e.g. live previews are
-;; provided) while staying fast.
+;; prefix argument). The new `consult-org-clock' command clocks out when
+;; selecting a heading that is currently clocked in, which removes the need for
+;; the `org-clock-out' command.
+;; However, the main improvement of this command is that `consult-org-clock'
+;; makes use of the minibuffer to get the user's input. By leveraging `consult'
+;; and the `completing-read' interface, the selection process should be more
+;; convenient and informative (e.g. live previews are provided) while staying
+;; fast.
+;; In the same vein, this package also provides the command
+;; `consult-org-clock-goto', replacing `org-clock-goto'.
 
 
 ;;; Code:
 
 (require 'cl-lib)
+(require 'seq)
 (require 'org)
 (require 'org-clock)
 (require 'consult)
@@ -148,23 +154,26 @@ The behavior of this command can be further altered by
 customizing `consult-org-clock-add-heading-clocked-out' and
 `consult-org-clock-add-heading-clocked-in'."
   (interactive "P")
-  (save-window-excursion
-	(consult-org-clock-select "Clock in or out: "
-							  consult-org-clock-show-name
-							  nil
-							  (if arg
-								  consult-org-clock-predicate-secondary
-								consult-org-clock-predicate))
-	(if (and
-		 (org-clocking-p)
-		 (eq (current-buffer) (marker-buffer org-clock-marker))
-		 (equal (point)
-				(save-excursion
-				  (goto-char org-clock-marker)
-				  (org-back-to-heading t)
-				  (point))))
-        (org-clock-out)
-	  (org-clock-in))))
+  (let ((marker (consult-org-clock-select "Clock in or out: "
+										  consult-org-clock-show-name
+										  nil
+										  (if arg
+											  consult-org-clock-predicate-secondary
+											consult-org-clock-predicate))))
+	(when-let ((buffer (marker-buffer marker))
+			   (pos (marker-position marker)))
+	  (with-current-buffer buffer
+		(org-with-wide-buffer
+		 (goto-char pos)
+		 (if (and
+			  (org-clocking-p)
+			  (eq buffer (marker-buffer org-clock-marker))
+			  (progn
+				(goto-char org-clock-marker)
+				(org-back-to-heading t)
+				(= pos (point))))
+			 (org-clock-out)
+		   (org-clock-in)))))))
 
 ;;;###autoload
 (defun consult-org-clock-goto (&optional select)
@@ -176,7 +185,8 @@ If `consult-org-clock-show-name' is non-nil, each candidate is prefixed
 by the corresponding buffer name."
   (interactive "P")
   (if select
-	  (consult-org-clock-select "Goto entry: " consult-org-clock-show-name)
+	  (consult--jump
+	   (consult-org-clock-select "Goto entry: " consult-org-clock-show-name))
     (org-clock-goto)))
 
 
@@ -194,19 +204,21 @@ is one) to the top of the list of candidates. That entry is never filtered by
 PREDICATE."
   (let ((list (consult-org-clock--format-history history predicate prefix))
         (entry-at-point (consult-org-clock--get-heading prefix)))
-    (if entry-at-point
-		(if (and list
-				 (or (and (org-clocking-p)
-						  (eq consult-org-clock-add-heading-clocked-in 'second))
-					 (and (not (org-clocking-p))
-						  (eq consult-org-clock-add-heading-clocked-out 'second)))
-				 (not (string-equal (car list) entry-at-point)))
-			(cons (car list)
-				  (cons entry-at-point
-						(cl-remove-if (apply-partially #'string-equal entry-at-point)
-									  (cdr list))))
-		  (cons entry-at-point (cl-remove-if (apply-partially #'string-equal entry-at-point) list)))
-      list)))
+	;; `org-clock-history' may contain different markers whose corresponding
+	;; headings are the same. Therefore, we need to remove duplicates.
+	;; Here it is important that always the first occurance of duplicate items
+	;; is kept.
+	(seq-uniq
+     (if entry-at-point
+		 (if (and list
+				  (or (and (org-clocking-p)
+						   (eq consult-org-clock-add-heading-clocked-in 'second))
+					  (and (not (org-clocking-p))
+						   (eq consult-org-clock-add-heading-clocked-out 'second))))
+			 (cons (car list) (cons entry-at-point (cdr list)))
+		   (cons entry-at-point list))
+       list)
+	 #'string-equal)))
 
 (defun consult-org-clock--format-history (&optional history predicate prefix)
   "Turn HISTORY into a collection that can be used with `consult--read'.
@@ -295,7 +307,7 @@ If PREFIX is non-nil, prefix the candidates with the buffer name."
 
 ;; Code adapted from `consult-org-heading'.
 (defun consult-org-clock-select (prompt prefix &optional history predicate)
-  "Let the user choose an org entry from history HISTORY and move point there.
+  "Let the user choose an org entry from history HISTORY.
 PROMPT is interpreted as in `completing-read'. HISTORY is a history variable
 like `org-clock-history', which also serves as the default value in case HISTORY
 is nil. PREDICATE may either be nil or be a predicate function taking an entry
@@ -312,7 +324,7 @@ PREFIX is interpreted as the value of `consult-org-clock-show-name', which see."
 	 :require-match t
 	 :history 'consult-org-clock--history
 	 :narrow (consult-org--narrow)
-	 :state (consult--jump-state)
+	 :state (consult--state-with-return (consult--jump-preview) #'ignore)
 	 :annotate (consult-org--annotate)
 	 :group
      (when (eq prefix 'group)
