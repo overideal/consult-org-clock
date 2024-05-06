@@ -322,26 +322,26 @@ is nil. PREDICATE may either be nil or be a predicate function taking an entry
 of HISTORY as input and returning a non-nil value if and only if that entry
 should be a candidate.
 PREFIX is interpreted as the value of `consult-org-clock-show-name', which see."
-  (let ((collection (or (consult-org-clock--history history predicate prefix)
-						(user-error "The clock history is empty"))))
-	(consult--read
-	 collection
-	 :prompt prompt
-	 :category 'consult-org-clock
-	 :sort nil
-	 :require-match t
-	 :history 'consult-org-clock--history
-	 :narrow (consult-org--narrow)
-	 :state (consult--state-with-return (consult--jump-preview) #'ignore)
-	 :annotate (consult-org--annotate)
-	 :group
-     (when (eq prefix 'group)
-       (lambda (cand transform)
-         (let ((name (buffer-name
-                      (marker-buffer
-                       (get-text-property 0 'org-marker cand)))))
-           (if transform (substring cand (1+ (length name))) name))))
-	 :lookup (apply-partially #'consult--lookup-prop 'org-marker))))
+  (consult--read
+   (consult--slow-operation "Collecting headings..."
+	 (or (consult-org-clock--history history predicate prefix)
+		 (user-error "The clock history is empty")))
+   :prompt prompt
+   :category 'consult-org-clock
+   :sort nil
+   :require-match t
+   :history 'consult-org-clock--history
+   :narrow (consult-org--narrow)
+   :state (consult--state-with-return (consult--jump-preview) #'ignore)
+   :annotate #'consult-org--annotate
+   :group
+   (when (eq prefix 'group)
+     (lambda (cand transform)
+       (let ((name (buffer-name
+                    (marker-buffer
+                     (get-text-property 0 'org-marker cand)))))
+         (if transform (substring cand (1+ (length name))) name))))
+   :lookup (apply-partially #'consult--lookup-prop 'org-marker)))
 
 (provide 'consult-org-clock)
 ;;; consult-org-clock.el ends here
